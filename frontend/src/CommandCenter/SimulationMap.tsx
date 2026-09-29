@@ -29,7 +29,7 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
           {
             id: 'background',
             type: 'background',
-            paint: { 'background-color': '#020617' } // VERY dark slate ocean
+            paint: { 'background-color': '#d4dadc' } // Light blue-gray ocean (matches positron)
           }
         ]
       },
@@ -94,7 +94,7 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
          type: 'fill',
          source: 'india-outline',
          paint: {
-            'fill-color': '#0f172a', // slate-900 (land)
+            'fill-color': '#f2f3f0', // Light gray land (matches positron)
          }
       });
       map.current!.addLayer({
@@ -102,7 +102,7 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
          type: 'line',
          source: 'india-outline',
          paint: {
-            'line-color': '#334155', // slate-700
+            'line-color': '#aab3bc', // Medium gray border
             'line-width': 1.5
          }
       });
@@ -112,9 +112,9 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
          type: 'line',
          source: 'map-grid',
          paint: {
-            'line-color': '#334155', // slate-700
+            'line-color': '#bcc5cf', // Light gray grid
             'line-width': 1,
-            'line-opacity': 0.5
+            'line-opacity': 0.4
          }
       });
 
@@ -123,8 +123,8 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
         type: 'fill',
         source: 'nwp-environment',
         paint: {
-          'fill-color': '#8b5cf6',
-          'fill-opacity': 0.05
+          'fill-color': '#7c3aed',
+          'fill-opacity': 0.1
         }
       });
 
@@ -134,8 +134,8 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
         source: 'satellite-cloud',
         paint: {
           'circle-radius': ['get', 'radius'],
-          'circle-color': '#e2e8f0',
-          'circle-opacity': 0.3,
+          'circle-color': '#94a3b8',
+          'circle-opacity': 0.35,
           'circle-blur': 1
         }
       });
@@ -165,7 +165,7 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
         type: 'line',
         source: 'storm-tracks',
         paint: {
-          'line-color': '#fcd34d',
+          'line-color': '#b45309',
           'line-width': 3,
           'line-dasharray': [2, 2]
         }
@@ -177,9 +177,9 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
         source: 'storm-track-points',
         paint: {
           'circle-radius': 4,
-          'circle-color': '#fcd34d',
-          'circle-stroke-width': 1,
-          'circle-stroke-color': '#000000'
+          'circle-color': '#d97706',
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#ffffff'
         }
       });
       
@@ -194,8 +194,8 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
           'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold']
         },
         paint: {
-          'text-color': '#fcd34d',
-          'text-halo-color': '#000000',
+          'text-color': '#92400e',
+          'text-halo-color': '#ffffff',
           'text-halo-width': 2
         }
       });
@@ -216,7 +216,7 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
           ],
           'circle-opacity': 0.7,
           'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
+          'circle-stroke-color': '#1e293b'
         }
       });
 
