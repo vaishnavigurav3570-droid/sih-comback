@@ -287,11 +287,14 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
                     </div>
                  </div>
 
-                 <div className="border border-slate-700 rounded-lg overflow-hidden">
-                    <div className="bg-slate-800 px-3 py-2 border-b border-slate-700 flex items-center justify-between">
-                       <span className="text-[10px] font-bold tracking-widest text-slate-300">WHY IS THIS CELL FLAGGED?</span>
-                       <span className="text-[8px] px-1 bg-amber-500/20 text-amber-500 rounded border border-amber-500/30">SIMULATED</span>
-                    </div>
+                 <details className="border border-slate-700 rounded-lg overflow-hidden group" open>
+                    <summary className="bg-slate-800 px-3 py-2 border-b border-slate-700 flex items-center justify-between cursor-pointer hover:bg-slate-700/80 transition-colors">
+                       <span className="text-[10px] font-bold tracking-widest text-slate-300 group-open:text-white">WHY IS THIS CELL FLAGGED?</span>
+                       <div className="flex items-center gap-2">
+                          <span className="text-[8px] px-1 bg-amber-500/20 text-amber-500 rounded border border-amber-500/30">SIMULATED</span>
+                          <span className="text-slate-500 group-open:rotate-180 transition-transform">▼</span>
+                       </div>
+                    </summary>
                     <div className="p-3 space-y-3 bg-slate-900/50">
                        
                        <div className="space-y-1">
@@ -345,7 +348,7 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
                           {selectedCell.intensity > 70 ? 'HIGH' : 'ELEVATED'}
                        </span>
                     </div>
-                 </div>
+                  </details>
 
                  {/* STORMFUSION ALERT CENTER */}
                  {selectedCell.intensity > 80 && (
