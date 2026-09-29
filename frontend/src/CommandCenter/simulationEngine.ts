@@ -1,3 +1,9 @@
+export interface TrackPoint {
+  leadTimeMin: number;
+  lat: number;
+  lon: number;
+}
+
 export interface SimulatedStormCell {
   id: string;
   lat: number;
@@ -17,6 +23,7 @@ export interface SimulatedStormCell {
   lifecycleStage: 'FORMING' | 'DEVELOPING' | 'INTENSIFYING' | 'MATURE' | 'WEAKENING';
   threatZonePolygon: [number, number][]; // [lon, lat] array for polygon
   radiusKm: number;
+  projectedTrack: TrackPoint[]; // discrete future points
 }
 
 export interface SimulationState {
@@ -64,24 +71,47 @@ export const getSimulationState = (timeOffsetMin: number): SimulationState => {
   const currentLon_014 = lerp(START_LON_014, END_LON_014, t);
   const radius_014 = lerp(15, 30, Math.sin(t * Math.PI)); // Storm grows then shrinks
 
-  // Generate a simple octagon threat zone around the projected cell
-  const generateThreatZone = (lat: number, lon: number, radiusKm: number): [number, number][] => {
-    // 1 degree lat is ~111km. 1 degree lon at 19N is ~105km.
-    const latOffset = radiusKm / 111;
-    const lonOffset = radiusKm / 105;
+    // Calculate future track points
+    const generateTrack = (lat: number, lon: number): TrackPoint[] => {
+      // 38 km/h = ~0.63 km/min. In 15 mins = 9.5 km.
+      // Direction 45 deg (NE).
+      return [15, 30, 45, 60].map(lead => {
+         const distKm = lead * (38 / 60);
+         // approx lat/lon offset
+         const latOffset = (distKm / 111) * Math.cos(45 * Math.PI / 180);
+         const lonOffset = (distKm / 105) * Math.sin(45 * Math.PI / 180);
+         return { leadTimeMin: lead, lat: lat + latOffset, lon: lon + lonOffset };
+      });
+    };
     
-    // We want the threat zone to be a cone extending forward in the direction of motion (Northeast ~ 45deg)
-    // For simplicity, we just make a polygon that favors the NE direction.
-    return [
-      [lon - lonOffset * 0.5, lat - latOffset * 0.5],
-      [lon + lonOffset * 0.5, lat - latOffset * 0.5],
-      [lon + lonOffset * 1.5, lat + latOffset * 0.5],
-      [lon + lonOffset * 2.0, lat + latOffset * 1.5], // Tip pointing NE
-      [lon + lonOffset * 1.0, lat + latOffset * 2.0],
-      [lon - lonOffset * 0.5, lat + latOffset * 0.5],
-      [lon - lonOffset * 0.5, lat - latOffset * 0.5],
-    ];
-  };
+    // Generate a widening threat zone around the projected cell track
+    const generateThreatZone = (lat: number, lon: number, track: TrackPoint[]): [number, number][] => {
+      if (track.length === 0) return [];
+      const endPt = track[track.length - 1];
+      const startWidthLon = 15 / 105;
+      const startWidthLat = 15 / 111;
+      const endWidthLon = 40 / 105; // widens to 40km at the end
+      const endWidthLat = 40 / 111;
+      
+      // Calculate perpendicular offsets for 45 deg (NW and SE)
+      const dxSE = Math.cos(-45 * Math.PI / 180);
+      const dySE = Math.sin(-45 * Math.PI / 180);
+      const dxNW = Math.cos(135 * Math.PI / 180);
+      const dyNW = Math.sin(135 * Math.PI / 180);
+
+      // We make a cone from current position to +60 position
+      return [
+        [lon + dxNW * startWidthLon, lat + dyNW * startWidthLat], // Start NW
+        [endPt.lon + dxNW * endWidthLon, endPt.lat + dyNW * endWidthLat], // End NW
+        [endPt.lon + (endPt.lon - lon)*0.2, endPt.lat + (endPt.lat - lat)*0.2], // Tip (further NE)
+        [endPt.lon + dxSE * endWidthLon, endPt.lat + dySE * endWidthLat], // End SE
+        [lon + dxSE * startWidthLon, lat + dySE * startWidthLat], // Start SE
+        [lon - (endPt.lon - lon)*0.1, lat - (endPt.lat - lat)*0.1], // Base (slightly SW)
+        [lon + dxNW * startWidthLon, lat + dyNW * startWidthLat], // Close polygon
+      ];
+    };
+    
+    const track_014 = generateTrack(currentLat_014, currentLon_014);
 
   const cell_014: SimulatedStormCell = {
     id: 'SF-014',
@@ -101,7 +131,8 @@ export const getSimulationState = (timeOffsetMin: number): SimulationState => {
     windShear: lerp(21, 15, t),
     lifecycleStage: lifecycle_014,
     radiusKm: radius_014,
-    threatZonePolygon: generateThreatZone(currentLat_014, currentLon_014, radius_014 * 1.5)
+    projectedTrack: track_014,
+    threatZonePolygon: generateThreatZone(currentLat_014, currentLon_014, track_014)
   };
 
   // SF-002 (A secondary weaker cell forming to the south)
@@ -109,14 +140,16 @@ export const getSimulationState = (timeOffsetMin: number): SimulationState => {
   const currentLon_002 = lerp(72.70, 72.90, t);
   const intensity_002 = lerp(30, 60, t);
   
+    const track_002 = generateTrack(currentLat_002, currentLon_002);
+
   const cell_002: SimulatedStormCell = {
     id: 'SF-002',
     lat: currentLat_002,
     lon: currentLon_002,
     intensity: intensity_002,
     growthRate: 3.5,
-    motionDirection: 40,
-    motionSpeed: 30,
+    motionDirection: 45,
+    motionSpeed: 38,
     lightningActivity: intensity_002 > 50 ? 'ELEVATED' : 'LOW',
     lightningFlashRate: Math.round(lerp(2, 15, t)),
     cloudTopTemp: lerp(-30, -55, t),
@@ -127,7 +160,8 @@ export const getSimulationState = (timeOffsetMin: number): SimulationState => {
     windShear: 18,
     lifecycleStage: t < 0.5 ? 'FORMING' : 'DEVELOPING',
     radiusKm: lerp(8, 18, t),
-    threatZonePolygon: generateThreatZone(currentLat_002, currentLon_002, 18)
+    projectedTrack: track_002,
+    threatZonePolygon: generateThreatZone(currentLat_002, currentLon_002, track_002)
   };
 
   return {

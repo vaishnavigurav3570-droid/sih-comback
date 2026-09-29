@@ -10,9 +10,10 @@ interface SimulationMapProps {
   radarMode: 'REFLECTIVITY' | 'VELOCITY' | 'SPECTRUM_WIDTH';
   satelliteVisible: boolean;
   nwpVisible: boolean;
+  selectedCellId: string | null;
 }
 
-export default function SimulationMap({ state, onCellSelect, activeLayers, radarMode, satelliteVisible, nwpVisible }: SimulationMapProps) {
+export default function SimulationMap({ state, onCellSelect, activeLayers, radarMode, satelliteVisible, nwpVisible, selectedCellId }: SimulationMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
 
@@ -23,36 +24,34 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
       container: mapContainer.current!,
       style: {
         version: 8,
-        sources: {
-          'carto-dark': {
-            type: 'raster',
-            tiles: [
-              'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-              'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-              'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-              'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
-            ],
-            tileSize: 256,
-            attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-          }
-        },
+        sources: {},
         layers: [
           {
-            id: 'carto-dark-layer',
-            type: 'raster',
-            source: 'carto-dark',
-            minzoom: 0,
-            maxzoom: 22
+            id: 'background',
+            type: 'background',
+            paint: { 'background-color': '#020617' } // VERY dark slate
           }
         ]
       },
       center: [72.82, 18.96], // Mumbai
       zoom: 8.5,
       interactive: true,
+      attributionControl: false, // NO carto watermark
     });
 
     map.current.on('load', () => {
       // Add Sources
+      
+      // Grid lines
+      const gridFeatures: any[] = [];
+      for(let i = 60; i <= 90; i+=1) { gridFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[i, 0], [i, 40]] }}); }
+      for(let i = 0; i <= 40; i+=1) { gridFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[60, i], [90, i]] }}); }
+      
+      map.current!.addSource('map-grid', {
+         type: 'geojson',
+         data: { type: 'FeatureCollection', features: gridFeatures }
+      });
+
       map.current!.addSource('storm-cells', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] }
@@ -62,6 +61,10 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
         data: { type: 'FeatureCollection', features: [] }
       });
       map.current!.addSource('storm-tracks', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+      map.current!.addSource('storm-track-points', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] }
       });
@@ -79,6 +82,16 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
       });
 
       // Add Layers
+      map.current!.addLayer({
+         id: 'map-grid-layer',
+         type: 'line',
+         source: 'map-grid',
+         paint: {
+            'line-color': '#1e293b', // slate-800
+            'line-width': 1
+         }
+      });
+
       map.current!.addLayer({
         id: 'nwp-layer',
         type: 'fill',
@@ -127,8 +140,37 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
         source: 'storm-tracks',
         paint: {
           'line-color': '#fcd34d',
-          'line-width': 2,
-          'line-dasharray': [1, 2]
+          'line-width': 3,
+          'line-dasharray': [2, 2]
+        }
+      });
+
+      map.current!.addLayer({
+        id: 'storm-track-points-layer',
+        type: 'circle',
+        source: 'storm-track-points',
+        paint: {
+          'circle-radius': 4,
+          'circle-color': '#fcd34d',
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#000000'
+        }
+      });
+      
+      map.current!.addLayer({
+        id: 'storm-track-labels-layer',
+        type: 'symbol',
+        source: 'storm-track-points',
+        layout: {
+          'text-field': '+{leadTime} MIN',
+          'text-size': 10,
+          'text-offset': [0, 1.5],
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold']
+        },
+        paint: {
+          'text-color': '#fcd34d',
+          'text-halo-color': '#000000',
+          'text-halo-width': 2
         }
       });
 
@@ -225,6 +267,15 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
 
   }, [activeLayers, radarMode, satelliteVisible, nwpVisible]);
 
+  // Center on selected cell smoothly
+  useEffect(() => {
+    if (!map.current || !selectedCellId) return;
+    const cell = state.cells.find(c => c.id === selectedCellId);
+    if (cell) {
+      map.current.easeTo({ center: [cell.lon, cell.lat], zoom: 8.5, duration: 2000, essential: true });
+    }
+  }, [selectedCellId, state.cells]);
+
   // Update data
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
@@ -264,17 +315,14 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
       features: activeLayers.includes('THREAT_ZONE') ? threatFeatures : []
     });
 
-    // 3. Projected Tracks (Simple line from current to center of threat zone)
+    // 3. Projected Tracks
     const trackFeatures = state.cells.map(cell => {
-      // Find approximate center of the front of the threat zone
-      const destLon = cell.threatZonePolygon[3][0];
-      const destLat = cell.threatZonePolygon[3][1];
       return {
         type: 'Feature' as const,
         properties: { id: cell.id },
         geometry: {
           type: 'LineString' as const,
-          coordinates: [[cell.lon, cell.lat], [destLon, destLat]]
+          coordinates: [[cell.lon, cell.lat], ...cell.projectedTrack.map(pt => [pt.lon, pt.lat])]
         }
       }
     });
@@ -282,6 +330,25 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
     (map.current.getSource('storm-tracks') as maplibregl.GeoJSONSource).setData({
       type: 'FeatureCollection',
       features: activeLayers.includes('TRACKS') ? trackFeatures : []
+    });
+
+    // 3b. Projected Track Points & Labels
+    const trackPointFeatures: any[] = [];
+    if (activeLayers.includes('TRACKS')) {
+       state.cells.forEach(cell => {
+          cell.projectedTrack.forEach(pt => {
+             trackPointFeatures.push({
+                type: 'Feature',
+                properties: { id: cell.id, leadTime: pt.leadTimeMin },
+                geometry: { type: 'Point', coordinates: [pt.lon, pt.lat] }
+             });
+          });
+       });
+    }
+    
+    (map.current.getSource('storm-track-points') as maplibregl.GeoJSONSource).setData({
+      type: 'FeatureCollection',
+      features: trackPointFeatures
     });
 
     // 4. Simulated Lightning Scatter

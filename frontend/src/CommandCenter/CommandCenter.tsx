@@ -38,7 +38,7 @@ interface CommandCenterProps {
 export function InternalCommandCenter({ onExit }: CommandCenterProps) {
   const [timeOffset, setTimeOffset] = useState(0); // 0 to 60
   const [isPlaying, setIsPlaying] = useState(false);
-  const [selectedCellId, setSelectedCellId] = useState<string | null>(null);
+  const [selectedCellId, setSelectedCellId] = useState<string | null>('SF-014');
   const [activeLayers, setActiveLayers] = useState<string[]>(['CELLS', 'THREAT_ZONE', 'TRACKS', 'LIGHTNING']);
   
   const [radarMode, setRadarMode] = useState<'REFLECTIVITY' | 'VELOCITY' | 'SPECTRUM_WIDTH'>('REFLECTIVITY');
@@ -82,7 +82,10 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <Cpu className="text-cyan-500 w-5 h-5" />
-            <h1 className="font-bold tracking-widest text-sm text-slate-100">STORMFUSION <span className="text-cyan-500">AI</span> COMMAND CENTER</h1>
+            <h1 className="font-bold tracking-widest text-sm text-slate-100 flex flex-col">
+               <span>STORMFUSION <span className="text-cyan-500">AI</span> COMMAND CENTER</span>
+               <span className="text-[9px] text-cyan-400 font-mono mt-0.5">LIVE STORM WATCH: 1 ACTIVE INTENSIFYING CELL</span>
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/50 text-amber-400 rounded text-[10px] font-bold tracking-widest uppercase animate-pulse">
@@ -113,7 +116,8 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
         <div className="flex-1 relative">
            <SimulationMap 
               state={state} 
-              onCellSelect={setSelectedCellId} 
+              onCellSelect={setSelectedCellId}
+              selectedCellId={selectedCellId}
               activeLayers={activeLayers} 
               radarMode={radarMode}
               satelliteVisible={satelliteVisible}
@@ -281,15 +285,59 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
                        <div className="text-[9px] font-bold tracking-widest text-slate-500 mb-1">INTENSITY</div>
                        <div className="text-lg font-light text-slate-200">{Math.round(selectedCell.intensity)}<span className="text-xs text-slate-500">/100</span></div>
                     </div>
-                    <div className="bg-slate-800/50 rounded p-3 border border-slate-700/50">
-                       <div className="text-[9px] font-bold tracking-widest text-slate-500 mb-1">MOTION</div>
+                    <div className="bg-slate-800/50 rounded p-3 border border-slate-700/50 flex flex-col items-center justify-center relative">
+                       <div className="absolute top-2 left-2 text-[9px] font-bold tracking-widest text-slate-500">MOTION</div>
+                       <div className="text-2xl font-black text-cyan-400 mt-2 mb-1">↗</div>
                        <div className="text-sm font-mono text-slate-200">NE {selectedCell.motionSpeed} <span className="text-[9px] text-slate-500">km/h</span></div>
+                    </div>
+                 </div>
+
+                 {/* LIFECYCLE */}
+                 <div className="border border-slate-700 rounded-lg overflow-hidden">
+                    <div className="bg-slate-800 px-3 py-2 border-b border-slate-700 flex items-center justify-between">
+                       <span className="text-[10px] font-bold tracking-widest text-slate-300">STORM LIFECYCLE</span>
+                    </div>
+                    <div className="p-3 bg-slate-900/50 flex flex-col gap-1 text-[10px] font-mono">
+                       {['FORMING', 'DEVELOPING', 'INTENSIFYING', 'MATURE', 'WEAKENING'].map(stage => (
+                          <div key={stage} className={`flex items-center gap-2 ${selectedCell.lifecycleStage === stage ? 'text-amber-400 font-bold' : 'text-slate-500'}`}>
+                             <span>{selectedCell.lifecycleStage === stage ? '●' : '○'}</span>
+                             {stage} {selectedCell.lifecycleStage === stage && '← CURRENT'}
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+
+                 {/* WHERE NEXT? / TRACK FORECAST */}
+                 <div className="border border-cyan-700/50 rounded-lg overflow-hidden shadow-[0_0_10px_rgba(6,182,212,0.1)]">
+                    <div className="bg-cyan-900/40 px-3 py-2 border-b border-cyan-800/50 flex items-center justify-between">
+                       <span className="text-[10px] font-bold tracking-widest text-cyan-400">TRACK FORECAST: WHERE NEXT?</span>
+                       <span className="text-[8px] px-1 bg-cyan-500/20 text-cyan-400 rounded border border-cyan-500/30">SIMULATED AI OUTPUT</span>
+                    </div>
+                    <div className="p-3 bg-slate-900/80 flex">
+                       <div className="flex flex-col items-center mr-4 mt-1">
+                          <div className="w-3 h-3 rounded-full bg-cyan-400 mb-1 border-2 border-slate-900"></div>
+                          <div className="w-0.5 h-6 bg-cyan-800"></div>
+                          <div className="w-2 h-2 rounded-full bg-cyan-600 mb-1"></div>
+                          <div className="w-0.5 h-6 bg-cyan-800"></div>
+                          <div className="w-2 h-2 rounded-full bg-cyan-600 mb-1"></div>
+                          <div className="w-0.5 h-6 bg-cyan-800"></div>
+                          <div className="w-2 h-2 rounded-full bg-cyan-600 mb-1"></div>
+                          <div className="w-0.5 h-6 bg-cyan-800"></div>
+                          <div className="w-2 h-2 rounded-full bg-cyan-700 mb-1"></div>
+                       </div>
+                       <div className="flex flex-col justify-between text-[10px] font-mono text-slate-300 w-full h-[120px]">
+                          <div className="flex justify-between items-center text-cyan-400 font-bold"><span>NOW (CURRENT)</span><span>NE {selectedCell.motionSpeed} km/h</span></div>
+                          <div className="flex justify-between items-center text-slate-400"><span>+15 MIN</span></div>
+                          <div className="flex justify-between items-center text-slate-400"><span>+30 MIN</span><span className="text-[9px] bg-red-500/20 text-red-400 px-1 rounded">THREAT ZONE HIGH</span></div>
+                          <div className="flex justify-between items-center text-slate-400"><span>+45 MIN</span></div>
+                          <div className="flex justify-between items-center text-slate-500"><span>+60 MIN</span><span>PROJECTED LEAD</span></div>
+                       </div>
                     </div>
                  </div>
 
                  <details className="border border-slate-700 rounded-lg overflow-hidden group" open>
                     <summary className="bg-slate-800 px-3 py-2 border-b border-slate-700 flex items-center justify-between cursor-pointer hover:bg-slate-700/80 transition-colors">
-                       <span className="text-[10px] font-bold tracking-widest text-slate-300 group-open:text-white">WHY IS THIS CELL FLAGGED?</span>
+                       <span className="text-[10px] font-bold tracking-widest text-slate-300 group-open:text-white">WHY THIS TRACK?</span>
                        <div className="flex items-center gap-2">
                           <span className="text-[8px] px-1 bg-amber-500/20 text-amber-500 rounded border border-amber-500/30">SIMULATED</span>
                           <span className="text-slate-500 group-open:rotate-180 transition-transform">▼</span>
@@ -343,9 +391,9 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
 
                     </div>
                     <div className="bg-slate-800/80 px-3 py-2 flex items-center justify-between border-t border-slate-700">
-                       <span className="text-[10px] font-bold tracking-widest text-slate-400">MULTIMODAL EVIDENCE</span>
-                       <span className={`text-[10px] font-bold tracking-widest ${selectedCell.intensity > 70 ? 'text-red-400' : 'text-amber-400'}`}>
-                          {selectedCell.intensity > 70 ? 'HIGH' : 'ELEVATED'}
+                       <span className="text-[10px] font-bold tracking-widest text-slate-400">FUSED MOTION ESTIMATE</span>
+                       <span className="text-[10px] font-bold tracking-widest text-cyan-400">
+                          NE • {selectedCell.motionSpeed} km/h
                        </span>
                     </div>
                   </details>
