@@ -157,6 +157,15 @@ data = xr.DataArray(
 | `long_name` | Human-readable variable description |
 | `source` | `"SYNTHETIC"`, `"MOSDAC"`, `"RADAR"`, etc. |
 | `variable_id` | Machine-readable variable identifier |
+| `is_synthetic` | `True` or `False` (provenance flag) |
+| `product_type` | E.g. `L1B_STD` or `L2B_CTP` |
+
+### 4.2 Multi-Resolution Grids
+For raw data ingestion, native resolution and geographic coordinate structures MUST be preserved.
+For INSAT-3DS, a single `DataPayload` may contain multiple grids:
+- `y_vis`, `x_vis` (1km) alongside `y_ir`, `x_ir` (4km)
+- E.g. `IMG_VIS` uses `latitude_vis`, `IMG_MIR` uses `latitude_ir`.
+The common grid interpolation is applied *only* downstream in the `CommonGridder` stage.
 
 ---
 

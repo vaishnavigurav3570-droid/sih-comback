@@ -1,0 +1,110 @@
+[
+    {
+        "dataset_id": "3SIMG_L1B_STD",
+        "file_name": "3SIMG_29MAY2025_1200_L1B_STD_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L1B_STD\\3SIMG_29MAY2025_1200_L1B_STD_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L1B_STD",
+        "file_name": "3SIMG_29MAY2025_1230_L1B_STD_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L1B_STD\\3SIMG_29MAY2025_1230_L1B_STD_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L1B_STD",
+        "file_name": "3SIMG_29MAY2025_1300_L1B_STD_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L1B_STD\\3SIMG_29MAY2025_1300_L1B_STD_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L1B_STD",
+        "file_name": "3SIMG_29MAY2025_1330_L1B_STD_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L1B_STD\\3SIMG_29MAY2025_1330_L1B_STD_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L1B_STD",
+        "file_name": "3SIMG_29MAY2025_1400_L1B_STD_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L1B_STD\\3SIMG_29MAY2025_1400_L1B_STD_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L1B_STD",
+        "file_name": "3SIMG_29MAY2025_1430_L1B_STD_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L1B_STD\\3SIMG_29MAY2025_1430_L1B_STD_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L2B_CTP",
+        "file_name": "3SIMG_29MAY2025_1200_L2B_CTP_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L2B_CTP\\3SIMG_29MAY2025_1200_L2B_CTP_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution. Output: \nSearching Data for Provided Parameters...\n\n100 Files Found for 3SIMG_L2B_CTP\n\n'skip_user_input' Option Enabled in 'config.json'. Proceeding with Download...\n\nVerifying User Credentials..\n\nLogin Successful. Hello vedantgurav!\n\nUnexpected Status Code: 500\n\n\n[ERROR] Error Fetching Data from 'fetch_and_download_data()' method.\n\nError Message: Data unavailable for given parameters\nError Details: 500 Server Error:  for url: https://mosdac.gov.in/apios/datasets.json?datasetId=3SIMG_L2B_CTP&startTime=2025-05-29&endTime=2025-05-29&count=100&startIndex=101\n"
+    },
+    {
+        "dataset_id": "3SIMG_L2B_CTP",
+        "file_name": "3SIMG_29MAY2025_1230_L2B_CTP_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L2B_CTP\\3SIMG_29MAY2025_1230_L2B_CTP_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L2B_CTP",
+        "file_name": "3SIMG_29MAY2025_1300_L2B_CTP_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L2B_CTP\\3SIMG_29MAY2025_1300_L2B_CTP_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L2B_CTP",
+        "file_name": "3SIMG_29MAY2025_1330_L2B_CTP_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L2B_CTP\\3SIMG_29MAY2025_1330_L2B_CTP_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L2B_CTP",
+        "file_name": "3SIMG_29MAY2025_1400_L2B_CTP_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L2B_CTP\\3SIMG_29MAY2025_1400_L2B_CTP_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    },
+    {
+        "dataset_id": "3SIMG_L2B_CTP",
+        "file_name": "3SIMG_29MAY2025_1430_L2B_CTP_V01R00.h5",
+        "status": "FAILED",
+        "local_path": "C:\\Users\\Vedant\\Desktop\\sih comeback\\data\\mosdac\\2025-05-29\\3SIMG_L2B_CTP\\3SIMG_29MAY2025_1430_L2B_CTP_V01R00.h5",
+        "file_size": null,
+        "checksum": null,
+        "error": "File not found after mdapi execution."
+    }
+]

@@ -90,10 +90,11 @@ MOSDAC Servers
 ### 3.1 Why Wrap It?
 
 1. **Uniform interface** — `MOSDACSatelliteProvider` implements the same `DataProvider` interface as `RadarDataProvider`, `SyntheticDataProvider`, etc. The pipeline doesn't care which one it's talking to.
-2. **Credential isolation** — Credentials are loaded from environment variables in one place and never passed further than the provider.
-3. **Error handling** — We add retry logic, timeout handling, and graceful fallback to demo mode.
-4. **Caching** — We can cache downloaded files locally to avoid re-downloading.
-5. **Testability** — We can mock `MOSDACSatelliteProvider` in tests without needing real MOSDAC access.
+2. **Subprocess Isolation** — We do not import `mdapi.py` directly, as it relies on global variables and a local `config.json`. Instead, we generate a secure, temporary `config.json` and invoke `python mdapi.py` as a subprocess.
+3. **Credential isolation** — Credentials are loaded from environment variables in one place and securely passed to the temporary `config.json`, which is deleted immediately after the subprocess finishes.
+4. **Error handling** — We capture subprocess output to detect authentication or network failures and gracefully fall back to demo mode.
+5. **Caching** — We can cache downloaded files locally to avoid re-downloading.
+6. **Testability** — We can mock `subprocess.run` in tests without needing real MOSDAC access.
 
 ### 3.2 MOSDACSatelliteProvider Interface
 

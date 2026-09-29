@@ -234,19 +234,47 @@ class QualityController:
         if isinstance(payload.data, LightningDataPayload):
             return self._qc_lightning(payload, stats)
 
-        # Gridded data (xarray.DataArray)
+        # Gridded data (xarray.DataArray or Dataset)
         if not isinstance(payload.data, (xr.DataArray, xr.Dataset)):
             stats.total_points = 0
             return payload, stats
 
-        data_array = payload.data
-        if isinstance(data_array, xr.Dataset):
-            # For Datasets, check the first variable
-            first_var = list(data_array.data_vars)[0]
-            data_array = data_array[first_var]
+        if isinstance(payload.data, xr.Dataset):
+            qc_ds = payload.data.copy()
+            total_pts = 0
+            missing_pts = 0
+            out_of_range_pts = 0
+            good_pts = 0
 
+            for vname, da in payload.data.data_vars.items():
+                if not np.issubdtype(da.dtype, np.number):
+                    continue
+                values = da.values
+                nan_mask = np.isnan(values)
+                missing_pts += int(np.sum(nan_mask))
+
+                oor_mask = np.zeros_like(nan_mask)
+                if vname in self._ranges:
+                    vmin, vmax = self._ranges[vname]
+                    oor_mask = (~nan_mask) & ((values < vmin) | (values > vmax))
+                    out_of_range_pts += int(np.sum(oor_mask))
+
+                total_pts += values.size
+                good_pts += int(np.sum(~nan_mask & ~oor_mask))
+
+            stats.total_points = total_pts
+            stats.missing_points = missing_pts
+            stats.out_of_range_points = out_of_range_pts
+            stats.good_points = good_pts
+
+            qc_ds.attrs["qc_applied"] = True
+            qc_ds.attrs["qc_good_fraction"] = stats.good_fraction
+            qc_payload = DataPayload(metadata=payload.metadata, data=qc_ds)
+            return qc_payload, stats
+
+        data_array = payload.data
         values = data_array.values
-        stats.total_points = int(values.size)
+        stats.total_points = values.size
 
         # Create QC flag array (same shape as data)
         qc_flags = np.full_like(values, QCFlag.GOOD.value, dtype=np.int8)

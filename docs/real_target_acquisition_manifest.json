@@ -1,0 +1,21 @@
+{
+    "event_date": "2025-05-29",
+    "region": "Maharashtra and surrounding",
+    "radar": {
+        "status": "NOT_ACQUIRED",
+        "source": "IMD DWR",
+        "stations": ["Mumbai", "Nagpur", "Solapur", "Goa"],
+        "requested_window_ist": ["11:30", "15:30"],
+        "preferred_times_ist": ["12:00", "12:30", "13:00", "13:30", "14:00", "14:30"],
+        "format": "NetCDF/HDF5/CSV",
+        "access_route": "IMD Data Service Portal or direct request to ranjan.phukan@imd.gov.in"
+    },
+    "lightning": {
+        "status": "NOT_ACQUIRED",
+        "source": "IITM ILLN / Damini",
+        "requested_window_ist": ["11:30", "15:30"],
+        "format": "NetCDF/HDF5/CSV",
+        "access_route": "Direct request to IITM"
+    },
+    "scientific_status": "REAL_TARGETS_NOT_YET_ACQUIRED"
+}

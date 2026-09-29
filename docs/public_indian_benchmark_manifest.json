@@ -1,0 +1,8 @@
+{
+  "dataset_name": "Seasonal and Regional Distribution of Lightning Fraction Over Indian Subcontinent",
+  "source_url": "https://osf.io/h8tw5/",
+  "radar_availability": true,
+  "lightning_raw_availability": true,
+  "temporal_overlap_found": false,
+  "status": "PUBLIC_DATASET_FOUND_BUT_NOT_SCIENTIFICALLY_COMPATIBLE"
+}

@@ -233,6 +233,8 @@ class IngestionEngine:
                 try:
                     payload = provider.download(
                         meta.dataset_id,
+                        start_time=start_time,
+                        end_time=end_time,
                         reference_time=analysis_time,
                     )
 

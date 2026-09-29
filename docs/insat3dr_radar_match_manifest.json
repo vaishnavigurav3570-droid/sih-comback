@@ -1,0 +1,40 @@
+{
+  "audit_version": "1.0",
+  "dataset_target": "REAL_INSAT3DR_RADAR_MATCH",
+  "status": "REAL_INSAT3DR_RADAR_PAIR_DISCOVERED_DOWNLOAD_BLOCKED",
+  "audit_date": "2026-09-29T03:33:00Z",
+  "satellite_product": "3RIMG_L1C_ASIA_MER",
+  "radar_station": "Mumbai DWR (MUM)",
+  "events": [
+    {
+      "date": "16 April 2019",
+      "radar_frames": 11,
+      "radar_window_utc": ["14:49:25", "17:29:27"],
+      "satellite_frames_matched": 6,
+      "satellite_window_utc": ["14:45:00", "17:15:00"],
+      "max_temporal_offset_seconds": 869,
+      "average_temporal_offset_seconds": 381,
+      "download_status": "HTTP 500 Server Error"
+    },
+    {
+      "date": "20 July 2019",
+      "radar_frames": 8,
+      "radar_window_utc": ["13:12:54", "14:22:56"],
+      "satellite_frames_matched": 3,
+      "satellite_window_utc": ["13:15:00", "14:15:00"],
+      "max_temporal_offset_seconds": 725,
+      "average_temporal_offset_seconds": 381,
+      "download_status": "HTTP 500 Server Error"
+    }
+  ],
+  "spatial_compatibility": {
+    "radar_location": [19.0, 72.8],
+    "stormfusion_bbox": [8.4, 37.6, 68.7, 97.2],
+    "compatible": true
+  },
+  "lightning_compatibility": {
+    "available_lightning_years": [2023],
+    "radar_years": [2019],
+    "compatible": false
+  }
+}

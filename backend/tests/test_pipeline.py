@@ -22,6 +22,7 @@ from backend.app.models.data_types import (
 )
 from backend.app.providers.factory import DataProviderFactory
 from backend.app.providers.synthetic import SyntheticDataProvider
+from backend.app.providers.base import DataProvider
 from backend.pipeline.common_grid import CommonGridder, GridSpec
 from backend.pipeline.geo_alignment import GeoAligner
 from backend.pipeline.ingestion import IngestionEngine
@@ -47,7 +48,7 @@ def demo_settings() -> Settings:
 
 
 @pytest.fixture
-def providers(demo_settings) -> dict[DataSourceType, SyntheticDataProvider]:
+def providers(demo_settings) -> dict[DataSourceType, DataProvider]:
     """All synthetic providers."""
     factory = DataProviderFactory(demo_settings)
     return factory.get_all_providers()
@@ -106,7 +107,7 @@ class TestIngestion:
 
     def test_ingestion_handles_missing_provider_gracefully(self, reference_time):
         """Ingestion works with a subset of providers."""
-        partial = {
+        partial: dict[DataSourceType, DataProvider] = {
             DataSourceType.SATELLITE: SyntheticDataProvider(
                 emulated_source_type=DataSourceType.SATELLITE
             ),
@@ -318,6 +319,7 @@ class TestCommonGrid:
         grid_result = gridder.run(geo_result=geo_result, analysis_time=reference_time)
 
         expected_shape = small_grid_spec.shape
+        assert grid_result.dataset is not None
         for var_name in grid_result.dataset.data_vars:
             var = grid_result.dataset[var_name]
             assert (
@@ -430,6 +432,7 @@ class TestFullPipeline:
         result = pipeline.run(analysis_time=reference_time, region=INDIA_BBOX)
 
         ds = result.dataset
+        assert ds is not None
         assert "latitude" in ds.dims
         assert "longitude" in ds.dims
 

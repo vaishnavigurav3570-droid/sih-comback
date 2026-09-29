@@ -193,10 +193,10 @@ In DEMO mode, all values must carry a `source: "SYNTHETIC"` flag.
 | **Phase 1** | Data providers + Synthetic data + Interfaces | ✅ Complete |
 | **Phase 2** | Ingestion + QC + Grid pipeline | ✅ Complete |
 | **Phase 3** | Feature extraction + Fusion | ✅ Complete |
-| **Phase 4** | ML model (baseline) | ✅ Complete |
+| **Phase 4** | ML model (baseline) | ✅ Complete (Pipeline structurally complete) |
 | **Phase 5** | FastAPI backend + API | ✅ Complete |
 | **Phase 6** | React dashboard | ✅ Complete |
-| **Phase 7** | MOSDAC live integration | ✅ Complete |
-| **Phase 8** | Validation + Testing | ✅ Complete |
+| **Phase 7** | MOSDAC live integration | ⚠️ Partially Implemented (Auth/Discovery work; Downloads blocked by MOSDAC 500/503 errors) |
+| **Phase 8** | Validation + Testing | ⚠️ Partially Implemented (Validation harness complete; real-data scientific validation remains pending) |
 
 **Rule: Never jump phases. Always ask the user before proceeding.**

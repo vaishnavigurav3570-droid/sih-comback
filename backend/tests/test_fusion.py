@@ -57,4 +57,5 @@ class TestDataFuser:
 
         # var2[0, 0] was NaN, should be imputed to 0.0
         var2_idx = result.feature_names.index("var2")
+        assert result.feature_tensor is not None
         assert result.feature_tensor[var2_idx, 0, 0] == 0.0

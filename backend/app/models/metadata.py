@@ -57,6 +57,15 @@ class DatasetMetadata(BaseModel):
     quality_flags: dict | None = Field(
         default=None, description="Quality control metadata"
     )
+    nwp_init_time: datetime | None = Field(
+        default=None, description="NWP initialization time"
+    )
+    nwp_lead_time_hours: float | None = Field(
+        default=None, description="NWP forecast lead time in hours"
+    )
+    nwp_valid_time: datetime | None = Field(
+        default=None, description="NWP valid forecast time"
+    )
     extra: dict | None = Field(default=None, description="Any additional metadata")
 
     model_config = {"arbitrary_types_allowed": True}
@@ -79,3 +88,35 @@ class ConnectionStatus(BaseModel):
         default=None, description="Connection latency in milliseconds"
     )
     checked_at: datetime = Field(..., description="When this check was performed (UTC)")
+
+
+class MOSDACDiscoveryResult(BaseModel):
+    """
+    Result of a discovery search on MOSDAC.
+    """
+    dataset_id: str = Field(..., description="The ID of the dataset (e.g., 3SIMG_L1B_STD)")
+    product_name: str | None = Field(default=None, description="Name of the product")
+    file_name: str | None = Field(default=None, description="The expected filename")
+    timestamp: datetime | None = Field(default=None, description="Acquisition/observation timestamp")
+    file_size_bytes: int | None = Field(default=None, description="File size if available")
+    download_identifier: str | None = Field(default=None, description="Download identifier/record ID")
+    geographic_info: dict | None = Field(default=None, description="Geographic information if supplied")
+    source: str = Field(default="MOSDAC", description="Source of the data")
+    data_status: str = Field(default="REAL", description="Data status (REAL vs SYNTHETIC)")
+    availability_status: str = Field(default="DISCOVERED", description="Availability status (DISCOVERED, DOWNLOADED, etc.)")
+
+
+class MOSDACDownloadResult(BaseModel):
+    """
+    Result of downloading a specific file from MOSDAC.
+    """
+    dataset_id: str
+    file_name: str
+    timestamp: datetime | None = None
+    local_path: str | None = None
+    file_size_bytes: int | None = None
+    sha256_checksum: str | None = None
+    status: str = "FAILED"  # DOWNLOADING, DOWNLOADED, VERIFIED, FAILED
+    error_message: str | None = None
+    source: str = "MOSDAC"
+    data_status: str = "REAL"

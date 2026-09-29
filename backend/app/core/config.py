@@ -53,6 +53,10 @@ class Settings(BaseSettings):
         default="",
         description="MOSDAC SSO password. Required only in LIVE mode.",
     )
+    mosdac_local_data_root: str = Field(
+        default="",
+        description="Path to local real INSAT-3DS data. Bypasses mdapi if set.",
+    )
 
     # --- Data Directories ---
     data_dir: Path = Field(default=Path("./data"))

@@ -22,11 +22,11 @@ StormFusion AI is a prototype system that fuses multiple atmospheric data source
 | 1 | Data providers + Synthetic data | ✅ Complete |
 | 2 | Ingestion + QC + Grid pipeline | ✅ Complete |
 | 3 | Feature extraction + Fusion | ✅ Complete |
-| 4 | ML model (baseline) | ✅ Complete |
-| 5 | FastAPI backend + API | ✅ Complete |
+| 4 | ML model (baseline) | ⚠️ Partial |
+| 5 | FastAPI backend + API | ⚠️ Partial |
 | 6 | React dashboard | ✅ Complete |
-| 7 | MOSDAC live integration | ✅ Complete |
-| 8 | Validation + Testing | ✅ Complete |
+| 7 | MOSDAC live integration | ⚠️ Partial |
+| 8 | Validation + Testing | ❌ Not Impl. |
 
 ---
 

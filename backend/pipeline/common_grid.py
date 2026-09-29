@@ -56,6 +56,7 @@ class GridSpec:
 
     bbox: BoundingBox
     resolution_deg: float = DEFAULT_RESOLUTION_DEG
+    max_interpolation_distance_deg: float = 0.75
 
     @property
     def latitudes(self) -> np.ndarray:
@@ -181,6 +182,19 @@ class CommonGridder:
                     if payload.metadata.is_synthetic:
                         result.is_synthetic = True
 
+                elif isinstance(payload.data, xr.Dataset):
+                    for vname, da in payload.data.data_vars.items():
+                        if not np.issubdtype(da.dtype, np.number):
+                            continue
+                        regridded = self._regrid_data_array(
+                            da, target_lats, target_lons, vname
+                        )
+                        data_vars[vname] = regridded
+                        result.variables_included.append(vname)
+                        
+                    if payload.metadata.is_synthetic:
+                        result.is_synthetic = True
+
                 elif isinstance(payload.data, LightningDataPayload):
                     # Lightning — bin into grid cells
                     flash_density = self._bin_lightning(
@@ -240,30 +254,102 @@ class CommonGridder:
         """
         Interpolate a DataArray to the target grid.
 
-        Uses xarray's built-in interpolation (linear by default).
-        Falls back to nearest-neighbor if linear fails.
+        Checks if the coordinates are 1D (orthogonal) or 2D (geographic meshes).
+        For 1D, uses xarray's interp.
+        For 2D, uses scipy's griddata interpolation (nearest for categorical, linear for continuous).
         """
-        try:
-            # Use xarray's interp method for clean interpolation
-            regridded = data.interp(
-                latitude=target_lats,
-                longitude=target_lons,
-                method="linear",
-                kwargs={"fill_value": "extrapolate"},
-            )
-        except Exception:
-            # Fallback to nearest-neighbor if linear fails
-            logger.debug("Linear interpolation failed for %s, using nearest", var_name)
-            regridded = data.interp(
-                latitude=target_lats,
-                longitude=target_lons,
-                method="nearest",
+        is_2d = False
+        lat_coord = None
+        lon_coord = None
+        
+        for coord_name in data.coords:
+            if "lat" in str(coord_name).lower():
+                lat_coord = coord_name
+            elif "lon" in str(coord_name).lower():
+                lon_coord = coord_name
+                
+        if lat_coord and lon_coord and len(data.coords[lat_coord].shape) == 2:
+            is_2d = True
+            
+        if not is_2d:
+            try:
+                # Use xarray's interp method for clean 1D interpolation
+                regridded = data.interp(
+                    latitude=target_lats,
+                    longitude=target_lons,
+                    method="linear",
+                    kwargs={"fill_value": np.nan},
+                )
+            except Exception:
+                # Fallback to nearest-neighbor if linear fails
+                logger.debug("Linear interpolation failed for %s, using nearest", var_name)
+                regridded = data.interp(
+                    latitude=target_lats,
+                    longitude=target_lons,
+                    method="nearest",
+                )
+            method = "linear"
+        else:
+            import scipy.interpolate
+            
+            grid_lon, grid_lat = np.meshgrid(target_lons, target_lats)
+            src_lats = data.coords[lat_coord].values.ravel()
+            src_lons = data.coords[lon_coord].values.ravel()
+            src_vals = data.values.ravel()
+            
+            valid = np.isfinite(src_lats) & np.isfinite(src_lons) & np.isfinite(src_vals)
+            src_lats = src_lats[valid]
+            src_lons = src_lons[valid]
+            src_vals = src_vals[valid]
+            
+            # Subsample for huge arrays to maintain performance (e.g. VIS 1km grid has 12M points)
+            if len(src_vals) > 500_000:
+                step = int(np.ceil(len(src_vals) / 500_000))
+                src_lats = src_lats[::step]
+                src_lons = src_lons[::step]
+                src_vals = src_vals[::step]
+                
+            is_categorical = "flag" in var_name.lower() or var_name.startswith("CSBT") or var_name.startswith("CLRFR")
+            method = "nearest" if is_categorical else "linear"
+            
+            points = np.column_stack((src_lons, src_lats))
+            try:
+                regridded_vals = scipy.interpolate.griddata(
+                    points, src_vals, (grid_lon, grid_lat), method=method
+                )
+            except Exception as e:
+                logger.warning(f"Linear griddata failed for {var_name}: {e}. Falling back to nearest.")
+                regridded_vals = scipy.interpolate.griddata(
+                    points, src_vals, (grid_lon, grid_lat), method="nearest"
+                )
+                method = "nearest"
+                
+            from scipy.spatial import cKDTree
+            tree = cKDTree(points)
+            target_points = np.column_stack((grid_lon.ravel(), grid_lat.ravel()))
+            distances, _ = tree.query(target_points, k=1)
+            distances = distances.reshape(grid_lon.shape)
+            
+            mask = distances > self._grid_spec.max_interpolation_distance_deg
+            # For categorical strings/objects we cannot use np.nan easily if type isn't float, 
+            # but our source values are checked to be numeric in the run loop.
+            if np.issubdtype(regridded_vals.dtype, np.integer):
+                regridded_vals = regridded_vals.astype(float)
+            regridded_vals[mask] = np.nan
+                
+            regridded = xr.DataArray(
+                data=regridded_vals,
+                dims=["latitude", "longitude"],
+                coords={
+                    "latitude": target_lats,
+                    "longitude": target_lons,
+                }
             )
 
         # Preserve important attributes
         regridded.attrs.update(data.attrs)
         regridded.attrs["regridded"] = True
-        regridded.attrs["regrid_method"] = "linear"
+        regridded.attrs["regrid_method"] = method
         regridded.name = var_name
 
         return regridded

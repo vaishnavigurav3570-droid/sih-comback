@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 import numpy as np
@@ -85,11 +85,7 @@ class PredictionResult:
     """Result of the prediction stage."""
 
     forecast_product: ForecastProduct | None = None
-    warnings: list[str] = None
-
-    def __post_init__(self):
-        if self.warnings is None:
-            self.warnings = []
+    warnings: list[str] = field(default_factory=list)
 
 
 class Predictor:
@@ -137,6 +133,7 @@ class Predictor:
 
         fusion_res = pipeline_result.fusion_result
         tensor = fusion_res.feature_tensor  # Shape: (channels, lats, lons)
+        assert tensor is not None
 
         # 1. Run Inference
         if self.use_dummy_heuristic:
@@ -147,6 +144,10 @@ class Predictor:
         # 2. Convert raw arrays back to GridCellForecast objects
         # To do this, we need the grid coordinates
         grid_spec = pipeline_result.grid_spec
+        if grid_spec is None:
+            result.warnings.append("No grid specification available")
+            return result
+        
         lats = grid_spec.latitudes
         lons = grid_spec.longitudes
 
@@ -197,7 +198,7 @@ class Predictor:
             forecast_id=str(uuid.uuid4()),
             created_at=datetime.now(timezone.utc),
             valid_from=pipeline_result.analysis_time or datetime.now(timezone.utc),
-            region=grid_spec.bbox,
+            region=grid_spec.bbox if grid_spec else [],
             lead_times=self.lead_times,
             grid_forecasts=grid_forecasts,
             sensor_health=[],  # Ideally populated from the ingestion/time sync stages
