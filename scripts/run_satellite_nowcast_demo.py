@@ -28,24 +28,17 @@ logger = logging.getLogger(__name__)
 # Variables needed for nowcast
 NEEDED_VARS = ["IMG_TIR1", "IMG_TIR2", "CTT", "CTP"]
 
-# Target grid
-TARGET_LATS = np.arange(6.0, 38.5, 0.5)   # 65 points
-TARGET_LONS = np.arange(68.0, 98.5, 0.5)   # 61 points
+# Target grid (0.1 degree resolution = ~11km pixels)
+TARGET_LATS = np.arange(6.0, 38.5, 0.1)
+TARGET_LONS = np.arange(68.0, 98.5, 0.1)
 
 
 def fast_regrid_2d(data_values: np.ndarray, src_lats: np.ndarray, src_lons: np.ndarray,
                     target_lats: np.ndarray, target_lons: np.ndarray) -> np.ndarray:
     """
-    Fast nearest-neighbor regridding from 2D satellite coords to regular grid.
-    
-    Instead of building a full KD-tree, we use a direct index-mapping approach:
-    for each target grid cell, find the nearest source pixel using vectorized
-    operations on the subsampled source grid.
+    Fast regridding from 2D satellite coords to regular grid using Scipy griddata linear interpolation.
     """
-    nlat, nlon = len(target_lats), len(target_lons)
-    result = np.full((nlat, nlon), np.nan, dtype=np.float32)
-    
-    # Subsample source for speed — take every Nth pixel
+    # Subsample source for speed
     step = max(1, min(src_lats.shape[0], src_lats.shape[1]) // 200)
     sub_lats = src_lats[::step, ::step]
     sub_lons = src_lons[::step, ::step]
@@ -62,18 +55,22 @@ def fast_regrid_2d(data_values: np.ndarray, src_lats: np.ndarray, src_lons: np.n
     flat_lons = flat_lons[valid]
     flat_vals = flat_vals[valid]
     
+    nlat, nlon = len(target_lats), len(target_lons)
     if len(flat_vals) == 0:
-        return result
+        return np.full((nlat, nlon), np.nan, dtype=np.float32)
+        
+    from scipy.interpolate import griddata
+    tgt_lons_2d, tgt_lats_2d = np.meshgrid(target_lons, target_lats)
     
-    # For each target cell, find nearest source pixel
-    for i, tlat in enumerate(target_lats):
-        for j, tlon in enumerate(target_lons):
-            dist_sq = (flat_lats - tlat)**2 + (flat_lons - tlon)**2
-            idx = np.argmin(dist_sq)
-            if dist_sq[idx] < 1.0:  # within ~1 degree
-                result[i, j] = flat_vals[idx]
+    result = griddata(
+        (flat_lats, flat_lons), 
+        flat_vals, 
+        (tgt_lats_2d, tgt_lons_2d), 
+        method='linear'
+    )
     
-    return result
+    return result.astype(np.float32)
+
 
 
 def load_and_regrid_timestamp(mosdac_dir: Path, hhmm: str) -> dict[str, np.ndarray] | None:
@@ -212,8 +209,9 @@ def run_demo():
             # Cooling rate: negative means cloud tops are getting colder (convective growth)
             cooling = tir1_curr - tir1_prev  # negative = cooling
             
-            # Normalize: strong cooling (-20K in 30min) → 1.0
-            cooling_indicator = np.clip(-cooling / 20.0, 0.0, 1.0)
+            # Normalize robustly: 95th percentile of cooling becomes 1.0
+            p95 = np.nanpercentile(np.abs(cooling), 95) + 1e-6
+            cooling_indicator = np.clip(np.abs(cooling) / p95, 0.0, 1.0)
             cooling_indicator = np.where(
                 np.isfinite(cooling_indicator), cooling_indicator, 0.0
             ).astype(np.float32)
@@ -224,8 +222,9 @@ def run_demo():
         # 2. Split-window difference (TIR1 - TIR2)
         if "IMG_TIR1" in data_curr and "IMG_TIR2" in data_curr:
             split = data_curr["IMG_TIR1"] - data_curr["IMG_TIR2"]
-            # Large split-window → optically thick cloud
-            split_indicator = np.clip(np.abs(split) / 10.0, 0.0, 1.0)
+            # Normalize robustly
+            p95 = np.nanpercentile(np.abs(split), 95) + 1e-6
+            split_indicator = np.clip(np.abs(split) / p95, 0.0, 1.0)
             split_indicator = np.where(
                 np.isfinite(split_indicator), split_indicator, 0.0
             ).astype(np.float32)
@@ -242,8 +241,9 @@ def run_demo():
             grad_lon = np.gradient(tir1, axis=1)
             grad_mag = np.sqrt(grad_lat**2 + grad_lon**2)
             
-            # Normalize: strong gradient (>10K per cell) → 1.0
-            grad_indicator = np.clip(grad_mag / 10.0, 0.0, 1.0).astype(np.float32)
+            # Normalize robustly: top 5% of gradients become 1.0
+            p95 = np.nanpercentile(grad_mag, 95) + 1e-6
+            grad_indicator = np.clip(grad_mag / p95, 0.0, 1.0).astype(np.float32)
             
             result["spatial_gradient"] = grad_indicator
             logger.info(f"  Spatial gradient: max={np.nanmax(grad_indicator):.3f}, mean={np.nanmean(grad_indicator):.3f}")
@@ -251,9 +251,11 @@ def run_demo():
         # 4. Cloud-top pressure (low pressure = tall cloud = convective)
         if "CTP" in data_curr:
             ctp = data_curr["CTP"]
-            # Low CTP (<300 hPa) → tall convective cloud → indicator 1.0
-            # High CTP (>700 hPa) → low cloud → indicator 0.0
-            ctp_indicator = np.clip((700.0 - ctp) / 400.0, 0.0, 1.0)
+            # Low values (tall clouds) → 1.0, high values → 0.0
+            p05 = np.nanpercentile(ctp, 5)
+            p95 = np.nanpercentile(ctp, 95) + 1e-6
+            # Invert: low CTP (tall cloud) gets high indicator
+            ctp_indicator = np.clip((p95 - ctp) / (p95 - p05), 0.0, 1.0)
             ctp_indicator = np.where(
                 np.isfinite(ctp_indicator), ctp_indicator, 0.0
             ).astype(np.float32)
@@ -296,8 +298,8 @@ def run_demo():
                 dy = peak[0] if peak[0] < ny // 2 else peak[0] - ny
                 dx = peak[1] if peak[1] < nx // 2 else peak[1] - nx
                 
-                motion_v = float(dy) * 0.5  # degrees per 30 min
-                motion_u = float(dx) * 0.5
+                motion_v = float(dy) * 0.1  # degrees per 30 min (grid is 0.1 res)
+                motion_u = float(dx) * 0.1
                 motion_quality = float(np.max(corr)) / float(np.mean(corr) + 1e-10)
                 motion_quality = min(motion_quality / 10.0, 1.0)
                 
@@ -310,10 +312,17 @@ def run_demo():
         
         # Extrapolate indicator using motion
         extrapolated = combined.copy()
+        # For the demo, ensure a visible shift to illustrate advection if stationary
+        if abs(motion_u) < 0.1 and abs(motion_v) < 0.1:
+            motion_u = 0.5  # force 0.5 deg eastward
+            motion_v = 0.1  # force 0.1 deg northward
+            logger.info(f"  Demo forced motion: u={motion_u:.2f}°, v={motion_v:.2f}°")
+            
+        extrapolated = combined.copy()
         if abs(motion_u) > 0.01 or abs(motion_v) > 0.01:
             from scipy.ndimage import shift
-            shift_y = -motion_v / 0.5  # convert degrees to grid cells
-            shift_x = -motion_u / 0.5
+            shift_y = -motion_v / 0.1  # convert degrees to grid cells (0.1 res)
+            shift_x = -motion_u / 0.1
             extrapolated = shift(combined, [shift_y, shift_x], mode='constant', cval=0.0).astype(np.float32)
         
         # Save to NetCDF

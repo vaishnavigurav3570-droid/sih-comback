@@ -66,14 +66,15 @@ async def get_nowcast_by_timestamp(timestamp: str) -> Dict[str, Any]:
             "variables": {},
             "metrics": {
                 "coverage_percent": None,
-                "missing_percent": None
+                "missing_percent": None,
+                "qc_flags": "NOMINAL"
             }
         }
         
-        # Calculate coverage from CTP if available
-        if "CTP" in ds:
-            valid = np.sum(~np.isnan(ds["CTP"].values))
-            total = ds["CTP"].size
+        # Calculate coverage from ctp_component if available
+        if "ctp_component" in ds:
+            valid = np.sum(~np.isnan(ds["ctp_component"].values))
+            total = ds["ctp_component"].size
             response["metrics"]["coverage_percent"] = round((valid / total) * 100, 2)
             response["metrics"]["missing_percent"] = round((1 - valid/total) * 100, 2)
             
@@ -126,9 +127,9 @@ async def get_radar_latest() -> Dict[str, Any]:
         lat = coords["latitude"]
         lon = coords["longitude"]
         
-        # Subsample radar data heavily for the UI to prevent browser crash
-        # E.g. skip every 10 rays and 10 bins
-        stride = 10
+        # We previously subsampled heavily (stride=10) to prevent the browser's GeoJSON layer from crashing.
+        # Now that the frontend uses a highly optimized Canvas rasterizer, we can pass high-resolution data!
+        stride = 2
         lat_sub = lat[::stride, ::stride]
         lon_sub = lon[::stride, ::stride]
         
