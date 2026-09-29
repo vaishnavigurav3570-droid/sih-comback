@@ -22,17 +22,7 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
     
     map.current = new maplibregl.Map({
       container: mapContainer.current!,
-      style: {
-        version: 8,
-        sources: {},
-        layers: [
-          {
-            id: 'background',
-            type: 'background',
-            paint: { 'background-color': '#020617' } // VERY dark slate
-          }
-        ]
-      },
+      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
       center: [72.82, 18.96], // Mumbai
       zoom: 8.5,
       interactive: true,
