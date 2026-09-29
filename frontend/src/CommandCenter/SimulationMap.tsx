@@ -77,8 +77,9 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
          type: 'line',
          source: 'map-grid',
          paint: {
-            'line-color': '#1e293b', // slate-800
-            'line-width': 1
+            'line-color': '#334155', // slate-700
+            'line-width': 1,
+            'line-opacity': 0.5
          }
       });
 
