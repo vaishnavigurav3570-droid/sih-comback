@@ -22,16 +22,33 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
     
     map.current = new maplibregl.Map({
       container: mapContainer.current!,
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      style: {
+        version: 8,
+        sources: {},
+        layers: [
+          {
+            id: 'background',
+            type: 'background',
+            paint: { 'background-color': '#020617' } // VERY dark slate ocean
+          }
+        ]
+      },
       center: [72.82, 18.96], // Mumbai
       zoom: 8.5,
       interactive: true,
       attributionControl: false, // NO carto watermark
     });
 
+    map.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+
     map.current.on('load', () => {
       // Add Sources
       
+      map.current!.addSource('india-outline', {
+         type: 'geojson',
+         data: '/india.geojson'
+      });
+
       // Grid lines
       const gridFeatures: any[] = [];
       for(let i = 60; i <= 90; i+=1) { gridFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[i, 0], [i, 40]] }}); }
@@ -72,6 +89,24 @@ export default function SimulationMap({ state, onCellSelect, activeLayers, radar
       });
 
       // Add Layers
+      map.current!.addLayer({
+         id: 'india-fill',
+         type: 'fill',
+         source: 'india-outline',
+         paint: {
+            'fill-color': '#0f172a', // slate-900 (land)
+         }
+      });
+      map.current!.addLayer({
+         id: 'india-border',
+         type: 'line',
+         source: 'india-outline',
+         paint: {
+            'line-color': '#334155', // slate-700
+            'line-width': 1.5
+         }
+      });
+
       map.current!.addLayer({
          id: 'map-grid-layer',
          type: 'line',
