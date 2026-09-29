@@ -1,0 +1,145 @@
+export interface SimulatedStormCell {
+  id: string;
+  lat: number;
+  lon: number;
+  intensity: number; // 0-100
+  growthRate: number; // e.g. 5 per 10min
+  motionDirection: number; // degrees
+  motionSpeed: number; // km/h
+  lightningActivity: 'LOW' | 'ELEVATED' | 'HIGH' | 'SEVERE';
+  lightningFlashRate: number; // flashes per 5 min
+  cloudTopTemp: number; // celsius
+  coolingRate: number; // K/hr
+  radarReflectivity: number; // dBZ
+  cape: number; // J/kg
+  cin: number; // J/kg
+  windShear: number; // m/s
+  lifecycleStage: 'FORMING' | 'DEVELOPING' | 'INTENSIFYING' | 'MATURE' | 'WEAKENING';
+  threatZonePolygon: [number, number][]; // [lon, lat] array for polygon
+  radiusKm: number;
+}
+
+export interface SimulationState {
+  timeOffsetMin: number; // 0 to 60
+  cells: SimulatedStormCell[];
+  overallAgreement: 'LOW' | 'MODERATE' | 'HIGH';
+  nwpSummary: {
+    cape: number;
+    cin: number;
+    shear: number;
+    rh: number;
+    temp: number;
+  }
+}
+
+// Helper to interpolate between two values
+const lerp = (start: number, end: number, t: number) => start + (end - start) * t;
+
+// Initial coordinates for SF-014 (Intensifying cell off Mumbai coast)
+const START_LAT_014 = 18.85;
+const START_LON_014 = 72.60;
+
+const END_LAT_014 = 19.10;
+const END_LON_014 = 72.85; // Moves Northeast towards Mumbai
+
+export const getSimulationState = (timeOffsetMin: number): SimulationState => {
+  // Normalize time between 0 and 1 (0 = NOW, 1 = +60 MIN)
+  const t = Math.max(0, Math.min(1, timeOffsetMin / 60));
+  
+  // SF-014 (The primary threat cell)
+  const intensity_014 = 75 + Math.sin(t * Math.PI) * 20; // Peaks at 95 around +30min
+  const ref_014 = lerp(45, 65, Math.sin(t * Math.PI)); // Peaks at 65 dBZ
+  const ctt_014 = lerp(-60, -78, Math.sin(t * Math.PI)); // Drops to -78C
+  
+  let lifecycle_014: SimulatedStormCell['lifecycleStage'] = 'DEVELOPING';
+  if (t > 0.1 && t < 0.4) lifecycle_014 = 'INTENSIFYING';
+  else if (t >= 0.4 && t < 0.7) lifecycle_014 = 'MATURE';
+  else if (t >= 0.7) lifecycle_014 = 'WEAKENING';
+
+  let lightning_014: SimulatedStormCell['lightningActivity'] = 'ELEVATED';
+  if (intensity_014 > 85) lightning_014 = 'SEVERE';
+  else if (intensity_014 > 70) lightning_014 = 'HIGH';
+
+  const currentLat_014 = lerp(START_LAT_014, END_LAT_014, t);
+  const currentLon_014 = lerp(START_LON_014, END_LON_014, t);
+  const radius_014 = lerp(15, 30, Math.sin(t * Math.PI)); // Storm grows then shrinks
+
+  // Generate a simple octagon threat zone around the projected cell
+  const generateThreatZone = (lat: number, lon: number, radiusKm: number): [number, number][] => {
+    // 1 degree lat is ~111km. 1 degree lon at 19N is ~105km.
+    const latOffset = radiusKm / 111;
+    const lonOffset = radiusKm / 105;
+    
+    // We want the threat zone to be a cone extending forward in the direction of motion (Northeast ~ 45deg)
+    // For simplicity, we just make a polygon that favors the NE direction.
+    return [
+      [lon - lonOffset * 0.5, lat - latOffset * 0.5],
+      [lon + lonOffset * 0.5, lat - latOffset * 0.5],
+      [lon + lonOffset * 1.5, lat + latOffset * 0.5],
+      [lon + lonOffset * 2.0, lat + latOffset * 1.5], // Tip pointing NE
+      [lon + lonOffset * 1.0, lat + latOffset * 2.0],
+      [lon - lonOffset * 0.5, lat + latOffset * 0.5],
+      [lon - lonOffset * 0.5, lat - latOffset * 0.5],
+    ];
+  };
+
+  const cell_014: SimulatedStormCell = {
+    id: 'SF-014',
+    lat: currentLat_014,
+    lon: currentLon_014,
+    intensity: intensity_014,
+    growthRate: (intensity_014 - (75 + Math.sin((t-0.1) * Math.PI) * 20)), // Rate of change
+    motionDirection: 45, // NE
+    motionSpeed: 38,
+    lightningActivity: lightning_014,
+    lightningFlashRate: Math.round(lerp(12, 45, Math.sin(t * Math.PI))),
+    cloudTopTemp: ctt_014,
+    coolingRate: t < 0.5 ? -8.1 : 2.5,
+    radarReflectivity: ref_014,
+    cape: lerp(2200, 1500, t),
+    cin: lerp(-18, -45, t),
+    windShear: lerp(21, 15, t),
+    lifecycleStage: lifecycle_014,
+    radiusKm: radius_014,
+    threatZonePolygon: generateThreatZone(currentLat_014, currentLon_014, radius_014 * 1.5)
+  };
+
+  // SF-002 (A secondary weaker cell forming to the south)
+  const currentLat_002 = lerp(18.20, 18.40, t);
+  const currentLon_002 = lerp(72.70, 72.90, t);
+  const intensity_002 = lerp(30, 60, t);
+  
+  const cell_002: SimulatedStormCell = {
+    id: 'SF-002',
+    lat: currentLat_002,
+    lon: currentLon_002,
+    intensity: intensity_002,
+    growthRate: 3.5,
+    motionDirection: 40,
+    motionSpeed: 30,
+    lightningActivity: intensity_002 > 50 ? 'ELEVATED' : 'LOW',
+    lightningFlashRate: Math.round(lerp(2, 15, t)),
+    cloudTopTemp: lerp(-30, -55, t),
+    coolingRate: -4.2,
+    radarReflectivity: lerp(25, 48, t),
+    cape: lerp(1800, 1600, t),
+    cin: lerp(-20, -30, t),
+    windShear: 18,
+    lifecycleStage: t < 0.5 ? 'FORMING' : 'DEVELOPING',
+    radiusKm: lerp(8, 18, t),
+    threatZonePolygon: generateThreatZone(currentLat_002, currentLon_002, 18)
+  };
+
+  return {
+    timeOffsetMin,
+    cells: [cell_014, cell_002],
+    overallAgreement: intensity_014 > 80 ? 'HIGH' : 'MODERATE',
+    nwpSummary: {
+      cape: cell_014.cape,
+      cin: cell_014.cin,
+      shear: cell_014.windShear,
+      rh: lerp(82, 88, Math.sin(t * Math.PI)),
+      temp: lerp(29, 26, t)
+    }
+  };
+};

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Activity, CloudLightning, CheckCircle2, AlertTriangle, Play, Square, SkipBack, SkipForward } from 'lucide-react';
+import { Activity, CloudLightning, CheckCircle2, AlertTriangle, Play, Square, SkipBack, SkipForward, Cpu } from 'lucide-react';
 import MapComponent, { type MapRef } from './MapComponent';
+import CommandCenter from './CommandCenter/CommandCenter';
 
-type ViewMode = 'LANDING' | 'SATELLITE' | 'RADAR' | 'SYSTEM';
+type ViewMode = 'LANDING' | 'SATELLITE' | 'RADAR' | 'SYSTEM' | 'COMMAND_CENTER';
 
 const frameCache: Record<string, any> = {};
 
@@ -216,6 +217,10 @@ export default function App() {
   }, [nowcastData]);
 
 
+  if (activeView === 'COMMAND_CENTER') {
+    return <CommandCenter onExit={() => setActiveView('LANDING')} />;
+  }
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500/30 flex flex-col">
       {/* MAP BACKGROUND (Always behind everything) */}
@@ -236,18 +241,31 @@ export default function App() {
            </div>
 
            {activeView !== 'LANDING' && (
-              <div className="flex items-center gap-1 bg-slate-50/80 backdrop-blur-md p-1 rounded-xl border border-slate-300 shadow-xl">
-                 <button onClick={isDemoActive ? stopDemo : startDemo} className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-colors ${isDemoActive ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-slate-900'} flex items-center gap-2`}>
-                    {isDemoActive ? 'STOP DEMO' : <><Play size={14} fill="currentColor"/> DEMO</>}
-                 </button>
-                 {!isDemoActive && (
-                    <>
-                       <div className="w-px h-6 bg-slate-200 mx-1"></div>
-                       <button onClick={() => navTo('SATELLITE')} className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-colors ${activeView === 'SATELLITE' ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'}`}>SATELLITE</button>
-                       <button onClick={() => navTo('RADAR')} className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-colors ${activeView === 'RADAR' ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'}`}>RADAR</button>
-                       <button onClick={() => navTo('SYSTEM')} className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-colors ${activeView === 'SYSTEM' ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'}`}>SYSTEM</button>
-                    </>
-                 )}
+              <div className="flex items-center gap-6">
+                 {/* PRODUCT MODE SWITCHER */}
+                 <div className="flex items-center bg-slate-200/80 backdrop-blur-md rounded-xl p-1 border border-slate-300 shadow-sm">
+                    <div className="px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase bg-white text-indigo-700 shadow-sm">
+                       ● REAL DATA
+                    </div>
+                    <button onClick={() => navTo('COMMAND_CENTER')} className="px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2">
+                       ○ SIMULATION
+                    </button>
+                 </div>
+
+                 {/* SUB-VIEWS */}
+                 <div className="flex items-center gap-1 bg-slate-50/80 backdrop-blur-md p-1 rounded-xl border border-slate-300 shadow-xl">
+                    <button onClick={isDemoActive ? stopDemo : startDemo} className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-colors ${isDemoActive ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-slate-900'} flex items-center gap-2`}>
+                       {isDemoActive ? 'STOP DEMO' : <><Play size={14} fill="currentColor"/> DEMO</>}
+                    </button>
+                    {!isDemoActive && (
+                       <>
+                          <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                          <button onClick={() => navTo('SATELLITE')} className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-colors ${activeView === 'SATELLITE' ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'}`}>SATELLITE</button>
+                          <button onClick={() => navTo('RADAR')} className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-colors ${activeView === 'RADAR' ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'}`}>RADAR</button>
+                          <button onClick={() => navTo('SYSTEM')} className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-colors ${activeView === 'SYSTEM' ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'}`}>SYSTEM</button>
+                       </>
+                    )}
+                 </div>
               </div>
            )}
         </div>
@@ -288,10 +306,28 @@ export default function App() {
                START DEMO
             </button>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 mb-6">
                <button onClick={() => navTo('SATELLITE')} className="px-6 py-2 bg-white border border-slate-300 hover:border-slate-400 rounded-lg text-xs font-bold tracking-widest uppercase text-slate-700 transition-colors">EXPLORE SATELLITE</button>
                <button onClick={() => navTo('RADAR')} className="px-6 py-2 bg-white border border-slate-300 hover:border-slate-400 rounded-lg text-xs font-bold tracking-widest uppercase text-slate-700 transition-colors">VIEW RADAR</button>
                <button onClick={() => navTo('SYSTEM')} className="px-6 py-2 bg-white border border-slate-300 hover:border-slate-400 rounded-lg text-xs font-bold tracking-widest uppercase text-slate-700 transition-colors">SYSTEM ARCHITECTURE</button>
+            </div>
+            
+            <div onClick={() => navTo('COMMAND_CENTER')} className="group cursor-pointer bg-white border-2 border-amber-400/50 hover:border-amber-400 rounded-2xl p-6 shadow-xl flex items-center gap-6 max-w-2xl w-full transition-all hover:-translate-y-1 mt-4">
+               <div className="w-16 h-16 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Cpu size={32} className="text-amber-500" />
+               </div>
+               <div className="flex-1 text-left">
+                  <div className="flex items-center gap-3 mb-1">
+                     <h3 className="text-lg font-black tracking-widest text-slate-900">OPERATIONAL COMMAND CENTER</h3>
+                     <span className="px-2 py-0.5 bg-amber-500/20 text-amber-600 rounded text-[9px] font-bold tracking-widest uppercase border border-amber-500/30">SIMULATION MODE</span>
+                  </div>
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                     Explore an end-to-end simulated storm response workflow. This concept demonstration illustrates the intended multimodal AI pipeline and threat alerts.
+                  </p>
+               </div>
+               <div className="shrink-0 text-amber-500 group-hover:translate-x-1 transition-transform">
+                  →
+               </div>
             </div>
          </div>
       )}
@@ -612,6 +648,28 @@ export default function App() {
                            <div className="flex items-center gap-3">✓ <span>VALIDATION: <strong className="text-emerald-600 ml-2">VERIFIED</strong></span></div>
                            <div className="flex items-center gap-3">○ <span>BENCHMARKING</span></div>
                            <div className="flex items-center gap-3 mt-4 pt-4 border-t border-amber-500/30">✓ <span>SYNTHETIC FALLBACK: <strong className="text-emerald-600 ml-2">DISABLED</strong></span></div>
+                        </div>
+                     </div>
+
+                     <div className="bg-slate-200/50 border border-slate-300 rounded-2xl p-6 shadow-xl">
+                        <h3 className="text-xs font-bold tracking-widest uppercase text-slate-700 mb-4 flex items-center gap-2"><Activity size={16}/> TWO DEMONSTRATION MODES</h3>
+                        
+                        <div className="mb-4">
+                           <h4 className="text-[10px] font-bold tracking-widest text-indigo-500 uppercase mb-2">REAL DATA</h4>
+                           <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
+                              <li>Current real-data implementation</li>
+                              <li>Real satellite/radar evidence</li>
+                              <li>Existing provenance</li>
+                           </ul>
+                        </div>
+                        
+                        <div>
+                           <h4 className="text-[10px] font-bold tracking-widest text-amber-500 uppercase mb-2">SIMULATION</h4>
+                           <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
+                              <li>Complete operational concept</li>
+                              <li>Simulated multimodal inputs & AI outputs</li>
+                              <li>Simulated threat zones & alerts</li>
+                           </ul>
                         </div>
                      </div>
 
