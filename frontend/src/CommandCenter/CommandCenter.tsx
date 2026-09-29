@@ -330,12 +330,12 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
                        <div className="space-y-1">
                           <div className="flex justify-between text-[10px] font-bold tracking-widest">
                              <span className="text-blue-400 flex items-center gap-1"><CloudRain className="w-3 h-3"/> NWP</span>
-                             <span className="text-slate-400">High CAPE</span>
+                             <span className="text-slate-400">{Math.round(selectedCell.cape)} J/kg</span>
                           </div>
                           <div className="h-1.5 w-full bg-slate-800 rounded overflow-hidden">
-                             <div className="h-full bg-blue-500" style={{ width: `85%` }}></div>
+                             <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, selectedCell.cape / 30)}%` }}></div>
                           </div>
-                          <p className="text-[9px] text-slate-400 font-mono">Favorable convective environment</p>
+                          <p className="text-[9px] text-slate-400 font-mono">High CAPE environment</p>
                        </div>
 
                     </div>
@@ -349,16 +349,25 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
 
                  {/* STORMFUSION ALERT CENTER */}
                  {selectedCell.intensity > 80 && (
-                    <div className="border border-red-500/50 bg-red-950/20 rounded-lg overflow-hidden shadow-[0_0_15px_rgba(239,68,68,0.1)]">
-                       <div className="bg-red-900/40 px-3 py-2 flex items-center gap-2 border-b border-red-500/30">
-                          <ShieldAlert className="w-4 h-4 text-red-500" />
-                          <span className="text-[10px] font-bold tracking-widest text-red-100 uppercase">STORMFUSION ALERT CENTER</span>
-                       </div>
-                       <div className="p-3">
-                          <div className="text-[9px] font-bold text-red-400 tracking-widest mb-2 border-b border-red-500/20 pb-1">SIMULATED HIGH SEVERITY</div>
-                          <p className="text-[10px] leading-relaxed text-red-200/80">
-                             Illustrative convective-development alert generated from simulated multimodal inputs. Projected to impact coastal regions in +30 MIN.
-                          </p>
+                    <div className="fixed bottom-16 right-16 z-50 animate-bounce">
+                       <div className="border-2 border-red-500 bg-red-950/95 backdrop-blur-xl rounded-xl overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.6)] w-[420px]">
+                          <div className="bg-red-600 px-4 py-3 flex items-center gap-3 border-b border-red-500">
+                             <ShieldAlert className="w-6 h-6 text-white animate-pulse" />
+                             <span className="text-sm font-black tracking-widest text-white uppercase">STORMFUSION ALERT CENTER</span>
+                          </div>
+                          <div className="p-5">
+                             <div className="text-sm font-black text-red-400 tracking-widest mb-3 border-b border-red-500/30 pb-2 flex justify-between">
+                                <span>SIMULATED HIGH SEVERITY</span>
+                                <span className="text-white">CELL {selectedCell.id}</span>
+                             </div>
+                             <p className="text-xs leading-relaxed text-red-200 font-mono mb-4">
+                                Illustrative convective-development alert generated from simulated multimodal inputs. Projected to impact coastal regions in +30 MIN.
+                             </p>
+                             <div className="flex gap-2">
+                                <div className="bg-red-900/50 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold text-red-300">INT: {Math.round(selectedCell.intensity)}</div>
+                                <div className="bg-red-900/50 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold text-red-300">DIR: NE {selectedCell.motionSpeed}km/h</div>
+                             </div>
+                          </div>
                        </div>
                     </div>
                  )}
