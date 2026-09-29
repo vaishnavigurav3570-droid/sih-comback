@@ -266,7 +266,17 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
            </div>
         )}
 
-        {/* RIGHT PANEL - SELECTED CELL DETAILS */}
+        {/* LEGEND overlay on map */}
+         <div className="absolute top-4 left-4 z-10 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-lg p-3 pointer-events-auto flex flex-col gap-2 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+            <div className="text-[9px] font-bold tracking-widest text-slate-500 uppercase border-b border-slate-700 pb-1 mb-1">SIMULATION MAP LEGEND</div>
+            <div className="flex items-center gap-2 text-[10px] text-slate-300 font-mono"><div className="w-2 h-2 rounded-full bg-amber-500 border border-white"></div> OBSERVED STORM</div>
+            <div className="flex items-center gap-2 text-[10px] text-slate-300 font-mono"><div className="w-4 h-0.5 bg-amber-400"></div> PROJECTED TRACK</div>
+            <div className="flex items-center gap-2 text-[10px] text-slate-300 font-mono"><div className="w-2 h-2 rounded-full border border-amber-400"></div> PROJECTED POSITION</div>
+            <div className="flex items-center gap-2 text-[10px] text-slate-300 font-mono"><div className="w-3 h-3 bg-red-500/20 border border-red-500 border-dashed"></div> THREAT ZONE</div>
+            <div className="flex items-center gap-2 text-[10px] text-slate-300 font-mono"><div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div> SIMULATED LIGHTNING</div>
+         </div>
+
+         {/* RIGHT PANEL - SELECTED CELL DETAILS */}
         <div className="w-80 bg-slate-900 border-l border-slate-700 flex flex-col overflow-y-auto shrink-0 relative z-20">
            {selectedCell ? (
               <div className="p-5 flex flex-col gap-6">
@@ -333,6 +343,26 @@ export function InternalCommandCenter({ onExit }: CommandCenterProps) {
                           <div className="flex justify-between items-center text-slate-500"><span>+60 MIN</span><span>PROJECTED LEAD</span></div>
                        </div>
                     </div>
+                 </div>
+
+                 <div className="mt-4 mb-2">
+                    <button onClick={() => {
+                       setIsPlaying(true);
+                       setSelectedCellId('SF-014');
+                       setActiveLayers(['CELLS', 'THREAT_ZONE', 'TRACKS', 'LIGHTNING']);
+                    }} className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded shadow-[0_0_15px_rgba(6,182,212,0.4)] text-[11px] font-black tracking-widest transition-all flex items-center justify-center gap-2 animate-pulse">
+                       <Play className="w-4 h-4 fill-current" /> RUN TRACK FORECAST
+                    </button>
+                 </div>
+
+                                  <div className="mt-4 mb-2">
+                    <button onClick={() => {
+                       setIsPlaying(true);
+                       setSelectedCellId('SF-014');
+                       setActiveLayers(['CELLS', 'THREAT_ZONE', 'TRACKS', 'LIGHTNING']);
+                    }} className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded shadow-[0_0_15px_rgba(6,182,212,0.4)] text-[11px] font-black tracking-widest transition-all flex items-center justify-center gap-2 animate-pulse">
+                       <Play className="w-4 h-4 fill-current" /> RUN TRACK FORECAST
+                    </button>
                  </div>
 
                  <details className="border border-slate-700 rounded-lg overflow-hidden group" open>
